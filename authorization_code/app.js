@@ -13,9 +13,9 @@ var cors = require('cors');
 var querystring = require('querystring');
 var cookieParser = require('cookie-parser');
 
-var client_id = 'CLIENT_ID'; // Your client id
-var client_secret = 'CLIENT_SECRET'; // Your secret
-var redirect_uri = 'REDIRECT_URI'; // Your redirect uri
+var client_id = '0125e3c5896e451a8be63da932a70d44'; // Your client id
+var client_secret = '2fe8265bd1044151b08967ea53acc4f6'; // Your secret
+var redirect_uri = 'http://localhost:8888/callback'; // Your redirect uri
 
 /**
  * Generates a random string containing numbers and letters
@@ -46,7 +46,7 @@ app.get('/login', function(req, res) {
   res.cookie(stateKey, state);
 
   // your application requests authorization
-  var scope = 'user-read-private user-read-email';
+  var scope = 'user-read-private user-read-email user-read-currently-playing';
   res.redirect('https://accounts.spotify.com/authorize?' +
     querystring.stringify({
       response_type: 'code',
@@ -55,6 +55,16 @@ app.get('/login', function(req, res) {
       redirect_uri: redirect_uri,
       state: state
     }));
+/*
+  res.redirect('https://api.genius.com/oauth/authorize?' +
+    querystring.stringify({
+      response_type: 'code',
+      client_id: 'CO7H9i2pSD8z44wuq1d1qRQetkX1oouLdho6KH7WuSwtamu9jVkTDJJnepKpaMH1',
+//      scope: scope,
+      redirect_uri: 'http://localhost:9999/callback',
+      state: 'state'
+    }));
+*/
 });
 
 app.get('/callback', function(req, res) {
@@ -93,14 +103,14 @@ app.get('/callback', function(req, res) {
             refresh_token = body.refresh_token;
 
         var options = {
-          url: 'https://api.spotify.com/v1/me',
+          url: 'https://api.spotify.com/v1/me/player/currently-playing',
           headers: { 'Authorization': 'Bearer ' + access_token },
           json: true
         };
 
         // use the access token to access the Spotify Web API
         request.get(options, function(error, response, body) {
-          console.log(body);
+          //console.log(body);
         });
 
         // we can also pass the token to the browser to make requests from there

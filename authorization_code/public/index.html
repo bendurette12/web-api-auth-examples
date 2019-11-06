@@ -25,6 +25,10 @@
       <div id="loggedin">
         <div id="user-profile">
         </div>
+        <div id="user-currentsong">
+        </div>
+        <div id="lyrics-link">
+        </div>
         <div id="oauth">
         </div>
         <button class="btn btn-default" id="obtain-new-token">Obtain new token using the refresh token</button>
@@ -49,6 +53,30 @@
           </dl>
         </div>
       </div>
+    </script>
+
+    <script id="user-currentsong-template" type="text/x-handlebars-template">
+      <h1>Current Song: {{item.name}}</h1>
+      <div class="media">
+        <div class="pull-left">
+          <img class="media-object" width="150" src="{{item.album.images.0.url}}" />
+        </div>
+        <div class="media-body">
+          <dl class="dl-horizontal">
+            <dt>Artist</dt><dd class="clearfix">{{item.artists.0.name}}</dd>
+            <dt>Album</dt><dd>{{item.album.name}}</dd>
+          </dl>
+        </div>
+      </div>
+    </script>
+
+    <script id="lyrics-link-template" type="text/x-handlebars-template">
+      <div class="media">
+        <div class="media-body">
+          <a href="{{response.hits.0.result.url}}" target="_blank">Get Lyrics</a>
+        </div>
+      </div>
+
     </script>
 
     <script id="oauth-template" type="text/x-handlebars-template">
@@ -82,6 +110,14 @@
             userProfileTemplate = Handlebars.compile(userProfileSource),
             userProfilePlaceholder = document.getElementById('user-profile');
 
+        var userCurrentSongSource = document.getElementById('user-currentsong-template').innerHTML,
+            userCurrentSongTemplate = Handlebars.compile(userCurrentSongSource),
+            userCurrentSongPlaceholder = document.getElementById('user-currentsong');
+
+        var userLyricsSource = document.getElementById('lyrics-link-template').innerHTML,
+            userLyricsTemplate = Handlebars.compile(userLyricsSource),
+            userLyricsPlaceholder = document.getElementById('lyrics-link');
+
         var oauthSource = document.getElementById('oauth-template').innerHTML,
             oauthTemplate = Handlebars.compile(oauthSource),
             oauthPlaceholder = document.getElementById('oauth');
@@ -109,6 +145,33 @@
                 },
                 success: function(response) {
                   userProfilePlaceholder.innerHTML = userProfileTemplate(response);
+
+                  $('#login').hide();
+                  $('#loggedin').show();
+                }
+            });
+
+            $.ajax({
+                url: 'https://api.spotify.com/v1/me/player/currently-playing',
+                headers: {
+                  'Authorization': 'Bearer ' + access_token
+                },
+                success: function(response) {
+                  userCurrentSongPlaceholder.innerHTML = userCurrentSongTemplate(response);
+                  var song = response.item.name;
+                  song = song.split('(')[0];
+                  song = song.split('-')[0];
+  //                const truncateAfter = song.indexOf('(');
+//                  song = song.substring(0, truncateAfter != -1 )
+                  const artist = response.item.artists[0].name;
+                  console.log(song + ' ' + artist);
+                  console.log(response.item);
+
+                  fetch('https://api.genius.com/search?q=' + song + '+' + artist + '&access_token=PqVh4vmnLHicu8unJPdInB3tljJeicKahiY8AmdiWjXJLecAV8pgiXThDP_lV4kC')
+                  .then(response => response.json())
+                  .then(json => userLyricsPlaceholder.innerHTML = userLyricsTemplate(json));// console.log(json.response.hits[0].result.url));//.response.hits.0.result.full_title));
+
+//                  userLyricsPlaceholder.innerHTML = userLyricsTemplate(json);
 
                   $('#login').hide();
                   $('#loggedin').show();
