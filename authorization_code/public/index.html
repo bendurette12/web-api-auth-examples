@@ -55,6 +55,7 @@
       </div>
     </script>
 
+    <!--Copied other scripts to make a <div> that gets parameters passed in to be populated from the HTTP request--> 
     <script id="user-currentsong-template" type="text/x-handlebars-template">
       <h1>Current Song: {{item.name}}</h1>
       <div class="media">
@@ -110,6 +111,7 @@
             userProfileTemplate = Handlebars.compile(userProfileSource),
             userProfilePlaceholder = document.getElementById('user-profile');
 
+        //copied this stuff too for the HTML parts
         var userCurrentSongSource = document.getElementById('user-currentsong-template').innerHTML,
             userCurrentSongTemplate = Handlebars.compile(userCurrentSongSource),
             userCurrentSongPlaceholder = document.getElementById('user-currentsong');
@@ -151,27 +153,28 @@
                 }
             });
 
+            //added an ajax call for th currently playing song, copied above but added more logic
             $.ajax({
                 url: 'https://api.spotify.com/v1/me/player/currently-playing',
                 headers: {
                   'Authorization': 'Bearer ' + access_token
                 },
                 success: function(response) {
-                  userCurrentSongPlaceholder.innerHTML = userCurrentSongTemplate(response);
+                  //get the song name and remove stuf like: "(feat. person)" or "- Acoustic Session" since they break Genius search
                   var song = response.item.name;
                   song = song.split('(')[0];
                   song = song.split('-')[0];
-  //                const truncateAfter = song.indexOf('(');
-//                  song = song.substring(0, truncateAfter != -1 )
+
+                  //get artist
                   const artist = response.item.artists[0].name;
                   console.log(song + ' ' + artist);
                   console.log(response.item);
 
+                  //pass in song and artist into a fetch from Genius API to get the URL of the lyrics of the song
+                  //pass the JSON returned by the call to Genius to the HMTL <div> to piece out the URL above 
                   fetch('https://api.genius.com/search?q=' + song + '+' + artist + '&access_token=PqVh4vmnLHicu8unJPdInB3tljJeicKahiY8AmdiWjXJLecAV8pgiXThDP_lV4kC')
                   .then(response => response.json())
-                  .then(json => userLyricsPlaceholder.innerHTML = userLyricsTemplate(json));// console.log(json.response.hits[0].result.url));//.response.hits.0.result.full_title));
-
-//                  userLyricsPlaceholder.innerHTML = userLyricsTemplate(json);
+                  .then(json => userLyricsPlaceholder.innerHTML = userLyricsTemplate(json));
 
                   $('#login').hide();
                   $('#loggedin').show();

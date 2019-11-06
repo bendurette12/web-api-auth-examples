@@ -46,6 +46,7 @@ app.get('/login', function(req, res) {
   res.cookie(stateKey, state);
 
   // your application requests authorization
+  //Ben: added the third scope for access to user's currently playing song during authentication
   var scope = 'user-read-private user-read-email user-read-currently-playing';
   res.redirect('https://accounts.spotify.com/authorize?' +
     querystring.stringify({
@@ -55,16 +56,6 @@ app.get('/login', function(req, res) {
       redirect_uri: redirect_uri,
       state: state
     }));
-/*
-  res.redirect('https://api.genius.com/oauth/authorize?' +
-    querystring.stringify({
-      response_type: 'code',
-      client_id: 'CO7H9i2pSD8z44wuq1d1qRQetkX1oouLdho6KH7WuSwtamu9jVkTDJJnepKpaMH1',
-//      scope: scope,
-      redirect_uri: 'http://localhost:9999/callback',
-      state: 'state'
-    }));
-*/
 });
 
 app.get('/callback', function(req, res) {
@@ -102,6 +93,7 @@ app.get('/callback', function(req, res) {
         var access_token = body.access_token,
             refresh_token = body.refresh_token;
 
+        //added this to get current playing song, but I don't think it does anything
         var options = {
           url: 'https://api.spotify.com/v1/me/player/currently-playing',
           headers: { 'Authorization': 'Bearer ' + access_token },
