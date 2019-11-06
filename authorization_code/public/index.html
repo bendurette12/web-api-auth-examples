@@ -160,6 +160,9 @@
                   'Authorization': 'Bearer ' + access_token
                 },
                 success: function(response) {
+                  //send Spotify current song info to HTML 
+                  userCurrentSongPlaceholder.innerHTML = userCurrentSongTemplate(response);
+
                   //get the song name and remove stuf like: "(feat. person)" or "- Acoustic Session" since they break Genius search
                   var song = response.item.name;
                   song = song.split('(')[0];
