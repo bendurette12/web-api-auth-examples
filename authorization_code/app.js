@@ -89,6 +89,7 @@ app.get('/callback', function(req, res) {
 
     request.post(authOptions, function(error, response, body) {
       if (!error && response.statusCode === 200) {
+        console.log("status 200");
 
         var access_token = body.access_token,
             refresh_token = body.refresh_token;
@@ -111,6 +112,38 @@ app.get('/callback', function(req, res) {
             access_token: access_token,
             refresh_token: refresh_token
           }));
+      } else if (response.statusCode === 401) { //if access token is expired, request new one with refresh token
+          console.log("status code 401");
+          var authOptions = {
+            url: 'https://accounts.spotify.com/api/token',
+            headers: { 'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64')) },
+            form: {
+              grant_type: 'refresh_token',
+              refresh_token: refresh_token
+            },
+            json: true
+          };
+
+          request.post(authOptions, function(error, response, body) {
+            if (!error && response.statusCode === 200) {
+              var access_token = body.access_token;
+              res.send({
+                'access_token': access_token
+              });
+            }
+          });
+
+          //added this to get current playing song, but I don't think it does anything
+          var options = {
+            url: 'https://api.spotify.com/v1/me/player/currently-playing',
+            headers: { 'Authorization': 'Bearer ' + access_token },
+            json: true
+          };
+
+          // use the access token to access the Spotify Web API
+          request.get(options, function(error, response, body) {
+            //console.log(body);
+          });          
       } else {
         res.redirect('/#' +
           querystring.stringify({

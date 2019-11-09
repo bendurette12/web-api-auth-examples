@@ -14,6 +14,14 @@
         width: 500px;
       }
     </style>
+    <link type="text/css" rel="stylesheet" href="./main.css" />
+
+    <script>
+      function timedRefresh(timeoutPeriod) {
+        setTimeout("location.reload(true);",timeoutPeriod);
+      }
+      window.onload = timedRefresh(5000);
+    </script>
   </head>
 
   <body>
@@ -29,27 +37,17 @@
         </div>
         <div id="lyrics-link">
         </div>
-        <div id="oauth">
-        </div>
-        <button class="btn btn-default" id="obtain-new-token">Obtain new token using the refresh token</button>
       </div>
     </div>
 
     <script id="user-profile-template" type="text/x-handlebars-template">
-      <h1>Logged in as {{display_name}}</h1>
       <div class="media">
         <div class="pull-left">
           <img class="media-object" width="150" src="{{images.0.url}}" />
         </div>
         <div class="media-body">
           <dl class="dl-horizontal">
-            <dt>Display name</dt><dd class="clearfix">{{display_name}}</dd>
-            <dt>Id</dt><dd>{{id}}</dd>
-            <dt>Email</dt><dd>{{email}}</dd>
-            <dt>Spotify URI</dt><dd><a href="{{external_urls.spotify}}">{{external_urls.spotify}}</a></dd>
-            <dt>Link</dt><dd><a href="{{href}}">{{href}}</a></dd>
-            <dt>Profile Image</dt><dd class="clearfix"><a href="{{images.0.url}}">{{images.0.url}}</a></dd>
-            <dt>Country</dt><dd>{{country}}</dd>
+            <dt>Logged in as</dt><dd class="clearfix">{{display_name}}</dd>
           </dl>
         </div>
       </div>
@@ -57,13 +55,13 @@
 
     <!--Copied other scripts to make a <div> that gets parameters passed in to be populated from the HTTP request--> 
     <script id="user-currentsong-template" type="text/x-handlebars-template">
-      <h1>Current Song: {{item.name}}</h1>
       <div class="media">
         <div class="pull-left">
           <img class="media-object" width="150" src="{{item.album.images.0.url}}" />
         </div>
         <div class="media-body">
           <dl class="dl-horizontal">
+            <dt>Song</dt><dd>{{item.name}}</dd>
             <dt>Artist</dt><dd class="clearfix">{{item.artists.0.name}}</dd>
             <dt>Album</dt><dd>{{item.album.name}}</dd>
           </dl>
@@ -73,19 +71,8 @@
 
     <script id="lyrics-link-template" type="text/x-handlebars-template">
       <div class="media">
-        <div class="media-body">
-          <a href="{{response.hits.0.result.url}}" target="_blank">Get Lyrics</a>
-        </div>
+        <button onclick="window.open('{{response.hits.0.result.url}}','_blank')" type="button"><b>Get Lyrics</b></br>{{response.hits.0.result.url}}</button>
       </div>
-
-    </script>
-
-    <script id="oauth-template" type="text/x-handlebars-template">
-      <h2>oAuth info</h2>
-      <dl class="dl-horizontal">
-        <dt>Access token</dt><dd class="text-overflow">{{access_token}}</dd>
-        <dt>Refresh token</dt><dd class="text-overflow">{{refresh_token}}</dd>
-      </dl>
     </script>
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/2.0.0-alpha.1/handlebars.min.js"></script>
@@ -107,6 +94,44 @@
           return hashParams;
         }
 
+        function massageString(string) {
+            string = string.split('(')[0];
+            string = string.split('-')[0];
+            string = string.replace(/!/g,"%21");
+            string = string.replace(/\"/g,"%22");
+            string = string.replace(/#/g,"%23");
+            string = string.replace(/\$/g,"%24");
+            string = string.replace(/&/g,"%26");
+            string = string.replace(/\'/g,"%27");
+            string = string.replace(/\(/g,"%28");
+            string = string.replace(/\)/g,"%29");
+            string = string.replace(/\*/g,"%2A");
+            string = string.replace(/\+/g,"%2B");
+            string = string.replace(/,/g,"%2C");
+            string = string.replace(/-/g,"%2D");
+            string = string.replace(/\./g,"%2E");
+            string = string.replace(/\//g,"%2F");
+            string = string.replace(/:/g,"%3A");
+            string = string.replace(/;/g,"%3B");
+            string = string.replace(/</g,"%3C");
+            string = string.replace(/=/g,"%3D");
+            string = string.replace(/>/g,"%3E");
+            string = string.replace(/\?/g,"%3F");
+            string = string.replace(/@/g,"%40");
+            string = string.replace(/\[/g,"%5B");
+            string = string.replace(/\\/g,"%5C");
+            string = string.replace(/]/g,"%5D");
+            string = string.replace(/\^/g,"%5E");
+            string = string.replace(/_/g,"%5F");
+            string = string.replace(/`/g,"%60");
+            string = string.replace(/{/g,"%7B");
+            string = string.replace(/\|/g,"%7C");
+            string = string.replace(/}/g,"%7D");
+            string = string.replace(/~/g,"%7E");
+            string = string.replace(/◊/g,"o"); //basically just for 21 M◊◊N WATER by Bon Iver
+          return string
+        }
+
         var userProfileSource = document.getElementById('user-profile-template').innerHTML,
             userProfileTemplate = Handlebars.compile(userProfileSource),
             userProfilePlaceholder = document.getElementById('user-profile');
@@ -120,10 +145,6 @@
             userLyricsTemplate = Handlebars.compile(userLyricsSource),
             userLyricsPlaceholder = document.getElementById('lyrics-link');
 
-        var oauthSource = document.getElementById('oauth-template').innerHTML,
-            oauthTemplate = Handlebars.compile(oauthSource),
-            oauthPlaceholder = document.getElementById('oauth');
-
         var params = getHashParams();
 
         var access_token = params.access_token,
@@ -134,11 +155,6 @@
           alert('There was an error during the authentication');
         } else {
           if (access_token) {
-            // render oauth info
-            oauthPlaceholder.innerHTML = oauthTemplate({
-              access_token: access_token,
-              refresh_token: refresh_token
-            });
 
             $.ajax({
                 url: 'https://api.spotify.com/v1/me',
@@ -163,19 +179,22 @@
                   //send Spotify current song info to HTML 
                   userCurrentSongPlaceholder.innerHTML = userCurrentSongTemplate(response);
 
-                  //get the song name and remove stuf like: "(feat. person)" or "- Acoustic Session" since they break Genius search
+                  //get the song name and artist
                   var song = response.item.name;
-                  song = song.split('(')[0];
-                  song = song.split('-')[0];
+                  var artist = response.item.artists[0].name;
 
-                  //get artist
-                  const artist = response.item.artists[0].name;
-                  console.log(song + ' ' + artist);
+                  //remove stuff like: "(feat. person)" or "- Acoustic Session" since they break Genius search
+                  //sub special characters with URL equivalents
+                  song = massageString(song);
+                  artist = massageString(artist);
+                  
+                  console.log(artist + ' ' + song);
                   console.log(response.item);
+                  console.log('https://api.genius.com/search?q=' + artist + '+' + song + '&access_token=PqVh4vmnLHicu8unJPdInB3tljJeicKahiY8AmdiWjXJLecAV8pgiXThDP_lV4kC');
 
                   //pass in song and artist into a fetch from Genius API to get the URL of the lyrics of the song
                   //pass the JSON returned by the call to Genius to the HMTL <div> to piece out the URL above 
-                  fetch('https://api.genius.com/search?q=' + song + '+' + artist + '&access_token=PqVh4vmnLHicu8unJPdInB3tljJeicKahiY8AmdiWjXJLecAV8pgiXThDP_lV4kC')
+                  fetch('https://api.genius.com/search?q=' + artist + '+' + song + '&access_token=PqVh4vmnLHicu8unJPdInB3tljJeicKahiY8AmdiWjXJLecAV8pgiXThDP_lV4kC')
                   .then(response => response.json())
                   .then(json => userLyricsPlaceholder.innerHTML = userLyricsTemplate(json));
 
@@ -188,21 +207,6 @@
               $('#login').show();
               $('#loggedin').hide();
           }
-
-          document.getElementById('obtain-new-token').addEventListener('click', function() {
-            $.ajax({
-              url: '/refresh_token',
-              data: {
-                'refresh_token': refresh_token
-              }
-            }).done(function(data) {
-              access_token = data.access_token;
-              oauthPlaceholder.innerHTML = oauthTemplate({
-                access_token: access_token,
-                refresh_token: refresh_token
-              });
-            });
-          }, false);
         }
       })();
     </script>
