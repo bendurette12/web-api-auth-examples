@@ -36,9 +36,11 @@ var stateKey = 'spotify_auth_state';
 
 var app = express();
 
-app.use(express.static(__dirname + '/public'))
+//HERE app.use(express.static(__dirname + '/public'))
+app.use(express.static('/Users/bendurette12/Sites'))
    .use(cors())
    .use(cookieParser());
+   console.log(__dirname);
 
 app.get('/login', function(req, res) {
 
@@ -108,6 +110,7 @@ app.get('/callback', function(req, res) {
 
         // we can also pass the token to the browser to make requests from there
         res.redirect('/#' +
+        //HERE res.redirect('/Users/bendurette12/Sites/Lyrics/SpotifyAPI/authorization_code/#' +
           querystring.stringify({
             access_token: access_token,
             refresh_token: refresh_token
@@ -178,5 +181,5 @@ app.get('/refresh_token', function(req, res) {
   });
 });
 
-console.log('Listening on 8888');
+  
 app.listen(8888);
